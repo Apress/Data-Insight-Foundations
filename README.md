@@ -14,3 +14,5 @@ Release v1.0 corresponds to the code in the published book, without corrections 
 ## Contributions
 
 See the file Contributing.md for more information on how you can contribute to this repository.
+
+If you're interested in additional code for graphics contact the author Nikita Tkachenko at nikita@askevalyn.com.
