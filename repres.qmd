@@ -1,0 +1,15 @@
+```{mermaid, label = "fig-literate-programming"}
+%%| label: fig-literate-programming
+%%| fig-cap: "Literate Programming Flow"
+flowchart TD
+    A[Collected Data] -->|Processing Code| B(Analytic Data)
+    B --> |Analysis Code| C(Computational Results)
+    C --> D{Presentation Code}
+    D --> G[Figures]
+    D --> E[Tables]
+    D --> F[Summaries]
+    G --> H[Article]
+    E --> H
+    F --> H
+    I[Text] --> H
+```

@@ -1,0 +1,79 @@
+```{r}
+for (i in 1:10) {
+  print(i)
+}
+
+iris %>%
+  group_by(Species) %>%
+  summarize_if(is.numeric, mean) %>%
+  ungroup() %>%
+  gather(measure, value, -Species) %>%
+  arrange(value)
+```
+```{r}
+for (i in 1:10){
+print(i)}
+
+iris %>% group_by(Species) %>% summarize_all(mean) %>%
+ungroup %>% gather(measure, value, -Species) %>%
+arrange(value)
+```
+```{r}
+average_height <- 1.70
+add_row()
+permute()
+```
+```{r}
+averageHeight = 1.70
+AverageHeight = 1.70
+row_adder()
+permutation()
+```
+```{r}
+if (condition) {
+  action1()
+} else {
+  action2()
+}
+```
+```{r}
+#| eval: false
+if (condition) 
+{
+action1()
+}
+else 
+{
+action2()
+}
+```
+```
+# Calculate average height - this metric is used for normalization
+```
+```
+# We are finding the average height
+
+#We will sum all of the heights and divide by the number of heights
+```
+```{r}
+long_function_name <- function(argument1,
+                               argument2,
+                               argument3,
+                               argument4) {
+  # function body
+}
+```
+```{r}
+long_function_name <- function(argument1, argument2, argument3, argument4) {
+  # function body
+}
+```
+```{r}
+iris %>% select(Sepal.Length, Sepal.Width, Species) %>% ggplot(aes(Sepal.Length, Sepal.Width, color = Species)) + geom_point()
+```
+```{r}
+iris %>%
+  select(Sepal.Length, Sepal.Width, Species) %>%
+  ggplot(aes(Sepal.Length, Sepal.Width, color = Species)) +
+  geom_point()
+```

@@ -1,0 +1,67 @@
+```{r}
+#| include: false
+library(tidyverse)
+library(scales)
+library(grDevices)
+```
+```{r}
+#| label: fig-rainbow_harm
+#| fig-cap: Rainbow (Jet) color map is dangerous
+#| fig-subcap: 
+#|    - Viridis
+#|    - Grayscale
+#|    - Jet
+#|    - Jet Grayscale
+#| layout-ncol: 2
+
+
+library(grDevices)
+library(scales)
+
+jet_colors <-
+  c("#00007F",
+    "blue",
+    "#007FFF",
+    "cyan",
+    "#7FFF7F",
+    "yellow",
+    "#FF7F00",
+    "red",
+    "#7F0000")
+
+base_plot <- tibble(value = 1000:0,) %>%
+  ggplot(aes(y = value, x = 0, fill = value)) +
+  geom_col() +
+  coord_polar() +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.text = element_blank(),
+    plot.title = element_text(size = 12 * .pt, hjust = 0.5),
+    legend.key.width = unit(0.6, "cm")
+  )
+
+
+viridis <- base_plot +
+  scale_fill_viridis_c()
+#  labs(title = "Viridis")
+
+jett <- base_plot +
+  scale_fill_gradientn(colors = colorRampPalette(jet_colors)(7))
+#labs(title = "Jet")
+
+
+jett_gray <- base_plot +
+  scale_fill_gradientn(colors = colorRampPalette(col2hcl(jet_colors, c = 0))(7))
+#labs(title = "Jet Grayscale")
+
+bw <- base_plot +
+  scale_fill_gradient(low = "black", high = "white")
+#  labs(title = "Black and White")
+
+viridis
+bw
+jett
+jett_gray
+```

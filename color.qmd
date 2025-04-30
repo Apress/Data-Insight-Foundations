@@ -1,0 +1,341 @@
+```{r include = FALSE}
+library("tidyverse")
+library("gapminder")
+# devtools::install_github("https://github.com/cran/colortools")
+library("colortools")
+library("patchwork")
+library("gridGraphics")
+library("grid")
+library("ggplotify")
+library("directlabels")
+```
+```{r message=FALSE}
+gapminder1997eu <- gapminder %>% filter((year == 1997) & (continent == "Europe")) %>%
+  mutate(country = recode(country,
+                          "Bosnia and Herzegovina" = "Bosnia",
+                          "Czech Republic" = "Czechia",
+                          "Slovak Republic" = "Slovakia",
+                          "United Kingdom" = "UK"))
+malay_miracle <- gapminder %>% filter(country %in% c("Malaysia", "Vietnam", "Indonesia", "Thailand"))
+continents <- gapminder %>%
+  select(-country) %>%
+  mutate(gdp = gdpPercap * pop) %>%
+  group_by(year, continent) %>%
+  summarize(total_pop_mil = sum(pop) / 10^6, total_gdp = sum(gdp), total_gdppc = total_gdp / (total_pop_mil * 10^6)) %>%
+  ungroup() 
+asian_tigers <- gapminder %>%
+  filter(country %in% c("Hong Kong, China", "Taiwan", "Singapore", "Korea, Rep.")) %>%
+  mutate(country = recode(country, 
+                          "Hong Kong, China" = "Hong Kong",
+                          "Korea, Rep." = "South Korea"))
+
+
+```
+```{r warning=FALSE}
+#| label: fig-gdp_eu_color
+p1 <- gapminder1997eu %>%
+  mutate(is.Greece = country == "Greece") %>%
+  ggplot(aes(y = fct_reorder(country, gdpPercap), x = gdpPercap)) +
+  geom_segment(aes(yend = country, xend = 0, color = country), size = 1, show.legend = FALSE) +
+  geom_point(aes(color = country), show.legend = FALSE, size = 3) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  # ggplot2::scale_color_manual(values = c("#7286D3","#D37286")) +
+  labs(x = "GDP per Capita", y = element_blank()) +
+  scale_x_continuous(labels = scales::dollar_format(scale = 1/1000, suffix = "K")) + 
+  coord_cartesian(expand = FALSE, clip = "off")
+p2 <- gapminder1997eu %>%
+  mutate(is.Greece = country == "Greece") %>%
+  ggplot(aes(y = fct_reorder(country, gdpPercap), x = gdpPercap)) +
+  geom_segment(aes(yend = country, xend = 0, color = is.Greece), size = 1, show.legend = FALSE) +
+  geom_point(aes(color = is.Greece), show.legend = FALSE, size = 3) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  ggplot2::scale_color_manual(values = c("grey", "#D37286")) +
+  labs(x = "GDP per Capita", y = element_blank()) +
+  scale_x_continuous(labels = scales::dollar_format(scale = 1/1000, suffix = "K")) + 
+  coord_cartesian(expand = FALSE, clip = "off") 
+
+pp <-p1 + p2 + plot_annotation(title = "Countries in Europe by GDP per Capita", theme = theme(plot.title = element_text(size = 16)))
+
+pp
+ggsave("new_plots/fig-gdp_eu_color.pdf", pp, height = unit(6,"in"), width = unit(6, "in"))
+```
+```{r include=FALSE, eval = TRUE}
+### Run this in console!
+color <- "#DA70D6"
+to_ggplot <- function(graph, aspect.ratio = 0.8) {
+  as.ggplot(graph) + theme(aspect.ratio = aspect.ratio)
+}
+make_pie_chart <- function(colors, colors_wheel, annotation = FALSE) {
+  rotation <- 180 / length(colors_wheel) / (180 / pi)
+  colors_wheel[!colors_wheel %in% colors] <- "#F2F2F2"
+  as.tibble(colors_wheel) %>%
+    tibble::rowid_to_column() %>%
+    ggplot(aes(y = 1, x = 1, group = rowid)) +
+    geom_col(aes(fill = value),
+      width = 1, color =
+        "white"
+    ) +
+    scale_fill_identity() +
+    coord_polar("y", start = rotation) +
+    {
+      if (annotation) {
+        geom_text(
+          aes(
+            y = rowid - 0.5,
+            label = value
+          ),
+          nudge_x = 1,
+          color = "grey"
+        )
+      }
+    } +
+    theme_void() +
+    theme(legend.position = "none")
+}
+colors_wheel <- invisible(colortools::wheel(color = color, num = 12))
+wheel <- make_pie_chart(colors_wheel, colors_wheel)
+analogous <- make_pie_chart(analogous(color, plot = FALSE), colors_wheel)
+triadic <- make_pie_chart(triadic(color, plot = FALSE), colors_wheel)
+complementary <- make_pie_chart(complementary(color, plot = FALSE), colors_wheel)
+splitComp <- make_pie_chart(splitComp(color, plot = FALSE), colors_wheel)
+tetradic <- make_pie_chart(tetradic(color, plot = FALSE), colors_wheel)
+square <- make_pie_chart(square(color, plot = FALSE), colors_wheel)
+sequential <- make_pie_chart(sequential(color, plot = FALSE), colors_wheel)
+
+# sequential(color)
+# grid.echo()
+# sequential <- to_ggplot(grid.grab())
+# pizza_colors <- c( "#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#A1DA70", "#F2F2F2", "#70DAA9", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2","#DA70D6")
+# pizza_colors_labcol <- c("black", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2", "black", "#F2F2F2", "black", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2")
+# pizza(colors = pizza_colors, labcol = pizza_colors_labcol, bg = "white", border = "white")
+# grid.echo()
+# complementary_3 <- to_ggplot(grid.grab())
+complementary_3 <- make_pie_chart(c("#A1DA70", "#70DAA9", "#DA70D6"), colors_wheel)
+
+malay_colors <- c("#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#A1DA70", "#70DA74", "#70DAA9", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#DA70D6")
+malay_labcol <- c("black", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2", "black", "black", "black", "#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2")
+# pizza(colors = malay_colors, labcol = malay_labcol, bg = "white", border = "white")
+# grid.echo()
+complementary_4 <- make_pie_chart(c("#A1DA70", "#70DA74", "#70DAA9", "#DA70D6"), colors_wheel)
+```
+```{r}
+#| label: fig-complementary_posneg
+#| fig-cap: Complementary Harmony with a Positive/Negative Connotation
+
+
+p3 <- continents %>%
+  filter(continent %in% c("Asia", "Europe")) %>%
+  ggplot(aes(x = year, y = total_pop_mil, color = continent)) +
+  geom_line(linewidth = 1.5) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_y_log10() +
+  scale_color_manual(values = c("#DA70D6", "#70DA74")) +
+  geom_dl(aes(label = continent), method = "smart.grid") +
+  labs(x = element_blank(), y = "Population in Millions (log10)")
+
+complementary + p3 + plot_annotation(theme = theme(plot.title = element_text(size = 16)))
+```
+```{r}
+#| label: fig-complementary_prim
+#| fig-cap: "Near Complementary Harmony for Highlighting \nTwo Series Where One Is the Primary Focus"
+
+p4 <- continents %>%
+  filter(continent %in% c("Asia", "Europe")) %>%
+  ggplot(aes(x = year, y = total_pop_mil, color = continent)) +
+  geom_line(size = 1.5) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_y_log10() +
+  scale_color_manual(values = c("#DA70D6", "#70D6DA")) +
+  geom_dl(aes(label = continent), method = "smart.grid") +
+  labs(x = element_blank(), y = "Population in Millions (log10)")
+triadic + p4 + plot_annotation(theme = theme(plot.title = element_text(size = 16)))
+```
+```{r}
+#| label: fig-analogous_eq
+#| fig-cap: "Analogous Harmony for Highlighting Three Series"
+p5 <- continents %>%
+  filter(continent %in% c("Asia", "Europe", "Americas")) %>%
+  ggplot(aes(x = year, y = total_pop_mil, color = continent)) +
+  geom_line(size = 1.5) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_y_log10() +
+  scale_color_manual(values = c("#DA70D6", "#DA70A1", "#A970DA")) +
+  geom_dl(aes(label = continent), method = "smart.grid") +
+  labs(x = element_blank(), y = "Population in Millions (log10)")
+analogous + p5 + plot_annotation(theme = theme(plot.title = element_text(size = 16)))
+```
+```{r}
+#| label: fig-triadic_dif
+#| fig-cap: "Triadic Harmony for Highlighting Three Series"
+p5 <- continents %>%
+  filter(continent %in% c("Asia", "Europe", "Americas")) %>%
+  ggplot(aes(x = year, y = total_pop_mil, color = continent)) +
+  geom_line(size = 1.5) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_y_log10() +
+  scale_color_manual(values = c("#DA70D6", "#D6DA70", "#70D6DA")) +
+  geom_dl(aes(label = continent), method = "smart.grid") +
+  labs(x = element_blank(), y = "Population in Millions (log10)")
+triadic + p5 + plot_annotation(theme = theme(plot.title = element_text(size = 16)))
+```
+```{r}
+#| label: fig-near_complementary
+#| fig-cap: "Highlighting One Series Against Two Related Series"
+p6 <- continents %>%
+  filter(continent %in% c("Asia", "Europe", "Americas")) %>%
+  ggplot(aes(x = year, y = total_gdppc, color = continent)) +
+  geom_line(size = 1.5) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_y_log10() +
+  scale_color_manual(values = c("#A1DA70", "#DA70D6", "#70DAA9")) +
+  geom_dl(aes(label = continent), method = "smart.grid") +
+  labs(x = element_blank(), y = "GDP per Capita (log10)")
+complementary_3 + p6 + plot_annotation(theme = theme(plot.title = element_text(size = 16)))
+```
+```{r}
+#| label: fig-one_main
+#| fig-cap: "Analogous Complementary for One Main Series and \nIts Three Components"
+p7 <- malay_miracle %>% ggplot(aes(x = year, y = gdpPercap, color = country)) +
+  geom_line(linewidth = 1.5) +
+  theme_minimal() +
+  # scale_y_log10() +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("#A1DA70", "#DA70D6", "#70DA74", "#70DAA9")) +
+  geom_dl(aes(label = country), method = "smart.grid") +
+  labs(x = element_blank(), y = "GDP per Capita (log10)")
+pp <- complementary_4 + p7 + plot_annotation( theme = theme(plot.title = element_text(size = 16)))
+pp
+ggsave("new_plots/fig-one_main.pdf", pp, height = unit(3.8, "in"), width = unit(6.8, "in"))
+```
+```{r}
+#| label: fig-two_pairs
+#| fig-cap: "Double Complementary for Two Pairs Where One Pair Is Dominant"
+p8 <- gapminder %>%
+  filter((continent == "Europe")) %>%
+  mutate(bot_top = case_when(
+    country %in% c("Albania") ~ "Albania",
+    country %in% c("Bosnia and Herzegovina") ~ "Bosnia",
+    country %in% c("Switzerland") ~ "Switzerland",
+    country %in% c("Norway") ~ "Norway",
+    T ~ "other"
+  )) %>%
+  ggplot(aes(x = year, y = gdpPercap, color = bot_top, group = country, alpha = bot_top)) +
+  geom_line(linewidth = 1.5) +
+  theme_minimal() +
+  theme(legend.position = "none", legend.title = element_blank()) +
+  scale_y_log10() +
+  geom_dl(aes(label = bot_top), method = "smart.grid") +
+  scale_color_manual(values = c("#70DA74", "#70D6DA", "#DA70D6", "grey", "#DA7470")) +
+  scale_alpha_manual(values = c(1, 1, 1, 0.3, 1)) +
+  labs( # title = "Growth of the bottom 2 and \ntop 2 countries by GDP in 1952",
+    x = element_blank(), y = "GDP per Capita (log10)"
+  )
+pp <- tetradic + p8 + plot_annotation( theme = theme(plot.title = element_text(size = 16)))
+pp
+ggsave("new_plots/fig-two_pairs.pdf", pp, height = unit(3.8, "in"), width = unit(6.8, "in"))
+```
+```{r}
+#| label: fig-four_equal
+#| fig-cap: "Rectangular or Square Complementary for \nFour Series of Equal Emphasis"
+p9 <- asian_tigers %>% ggplot(aes(x = year, y = gdpPercap, color = country)) +
+  geom_line(linewidth = 1.5) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_y_log10() +
+  scale_color_manual(values = c("#DA70D6", "#DAA970", "#70DA74", "#70A1DA")) +
+  geom_dl(aes(label = country), method = "smart.grid") +
+  labs(x = element_blank(), y = "GDP per Capita (log10)")
+square + p9 + plot_annotation( theme = theme(plot.title = element_text(size = 16)))
+```
+```{r}
+library("sf")
+library("rnaturalearth")
+library("rnaturalearthdata")
+library("maps")
+world <- ne_countries(scale = "medium", returnclass = "sf") %>% mutate(gdppc = gdp_md_est)
+```
+```{r include = FALSE}
+sequential <- tibble(n = 1:15, colors = sequential(color, 7) %>% as.ordered() %>% fct_rev()) %>% ggplot(aes(x = n, fill = colors)) +
+  geom_bar() +
+  scale_fill_identity() +
+  theme_void()
+
+divergent <- tibble(colors = 1:15) %>% ggplot(aes(x = colors, fill = colors, group = colors)) +
+  geom_bar() +
+  scale_fill_gradient(low = "#7470DA", high = "#D6DA70") +
+  theme_void() +
+  theme(legend.position = "none")
+
+viridis <- tibble(colors = 1:15) %>% ggplot(aes(x = colors, fill = colors, group = colors)) +
+  geom_bar() +
+  scale_fill_viridis_c(option = "D") +
+  theme_void() +
+  theme(legend.position = "none")
+
+states <- map_data("state")
+covid <- read_csv("data/covid_states.csv")
+
+data_for_map <- states %>%
+  left_join(mutate(covid, state = tolower(state)), 
+            by = join_by(region == state)) 
+
+map_theme <- function(object) {object +
+    geom_polygon(color = "white", ) +
+  theme_minimal() +
+  theme(legend.position  = "top",
+        legend.title = element_blank(),
+        legend.key.width = unit(100,units = "native"),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.grid = element_blank()) 
+}
+
+p10 <- data_for_map %>%
+  ggplot(aes(x = long, y = lat, group = group, fill = total_death_rate_per_10e5)) +
+  geom_polygon(color = "white") +
+  scale_fill_gradient(low = "#DADADAFF", high = "#DA00D2FF", 
+                      # limits = c(0, NA)
+                      ) +
+  labs(title = "COVID-19 Total Death Rate Per 100,000")
+p10 <- map_theme(p10)
+  
+p11 <- ggplot(data = data_for_map,
+         aes(x = long, y = lat,
+             group = group,
+             fill = scale(total_death_rate_per_10e5))) +
+  scale_fill_gradient(low = "#7470DA", high = "#D6DA70", limits = c(-3, 3)) +
+  labs(title = "COVID-19 Total Death Rate Scaled",
+       subtitle = "Standard Deviation Units")
+p11 <- map_theme(p11)
+
+p12 <- data_for_map %>%
+  ggplot(aes(x = long, y = lat, group = group, fill = total_death_rate_per_10e5)) +
+  labs(title = "COVID-19 Total Death Rate Per 100,000") +
+  scale_fill_viridis_c(option = "D")  
+p12 <- map_theme(p12)
+```
+```{r}
+#| label: fig-sequential
+p10
+```
+```{r}
+#| label: fig-divergent
+p11
+```
+```{r}
+#| label: fig-prebuilt
+p12
+```

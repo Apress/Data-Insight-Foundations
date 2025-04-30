@@ -1,0 +1,419 @@
+```{r include=FALSE}
+library(patchwork)
+library(tidyverse)
+```
+```{r}
+#| label: fig-red_dot
+#| layout-ncol: 2
+set.seed(42)
+points = 40
+coords <- data.frame(x = runif(n = points, min = 0, max = 1),
+                     y = runif(n = points, min = 0, max = 1),
+                     color = c(rep(F,times = points - 1),T))
+no_red <- coords |> ggplot(aes(x, y)) +
+    geom_point(size = 8, show.legend = F, color = "steelblue") +
+    theme_void() +
+    coord_cartesian(clip = "off") 
+with_red <- coords |> ggplot(aes(x, y, color = color)) +
+    geom_point(size = 8, show.legend = F) +
+    theme_void() +
+    coord_cartesian(clip = "off") +
+    scale_color_manual(values = c("steelblue","red"))
+no_red
+with_red
+```
+```{r}
+color_points <- complete(tibble(x = 1:6, y = 1:6), x, y) %>%
+  mutate(color = ifelse(x >= 1 & x <=2, T,F)) %>%
+  ggplot(aes(x,y, color = color)) + 
+  geom_point(size = 4, show.legend = F) +
+  xlim(c(1,6)) +
+  ylim(c(1,6)) +
+  coord_fixed(ratio = 1, expand = T, clip = "off") +
+  theme_void()
+color_shape_points <- complete(tibble(x = 1:6, y = 1:6), x, y) %>%
+  mutate(color = ifelse(y > 2 & y < 5, T,F)) %>%
+  mutate(shape = ifelse(x > 2 & x < 5, T,F)) %>%
+  ggplot(aes(x,y, color = color, shape = shape)) + 
+  geom_point(size = 4, show.legend = F) +
+  xlim(c(1,6)) +
+  ylim(c(1,6)) +
+  coord_fixed(ratio = 1, expand = T, clip = "off") +
+  theme_void()
+color_mix_shape_points <- complete(tibble(x = 1:6, y = 1:6), x, y) %>%
+  mutate(color = ifelse(y <= 2, T,F)) %>%
+  mutate(shape = ifelse(sample(0:1,size = nrow(.),replace = TRUE), T,F)) %>%
+  ggplot(aes(x,y, color = color, shape = shape)) + 
+  geom_point(size = 4, show.legend = F) +
+  xlim(c(1,6)) +
+  ylim(c(1,6)) +
+  coord_fixed(ratio = 1, expand = T, clip = "off") +
+  theme_void()
+mix_color_shape_points <- complete(tibble(x = 1:6, y = 1:6), x, y) %>%
+  mutate(shape = ifelse(x >= 5, T,F)) %>%
+  mutate(color = ifelse(sample(0:1,size = nrow(.),replace = TRUE), T,F)) %>%
+  ggplot(aes(x,y, color = color, shape = shape)) + 
+  geom_point(size = 4, show.legend = F) +
+  xlim(c(1,6)) +
+  ylim(c(1,6)) +
+  coord_fixed(ratio = 1, expand = T, clip = "off") +
+  theme_void()
+
+```
+```{r}
+#| label: fig-feature-hierarchy
+#| fig-cap: "Examples for Feature Hierarchy"
+#| fig-subcap: 
+#|   - ""
+#|   - ""
+#|   - ""
+#|   - ""
+#| layout-ncol: 2
+color_points
+color_mix_shape_points
+color_shape_points
+mix_color_shape_points
+```
+```{r}
+#| label: fig-circle_accuracy
+make_a_circle <- function(radius, color, label){
+  ggplot() + 
+  xlim(c(0,5)) +
+  ylim(c(0,5)) +
+  coord_fixed(ratio = 1, expand = T) +
+  theme_void() +
+  ggforce::geom_circle(aes(x0 = 2.5, y0 = 2.5 ,r= radius), fill=color) +
+  geom_text(aes(x = 2.5, y = 2.5, label = label), fontface = "bold", color = "black", size = 12)
+}  
+# Original
+circle_1 <- make_a_circle(radius=1, color = "green", label = 1)
+# Area
+circle_2 <- make_a_circle(radius=1*sqrt(2), color = "red", label = 2)
+# Steven's Law
+circle_3 <- make_a_circle(radius=1*sqrt(2)^(1/0.7), color = "red", label = 3)
+# Radius
+circle_4 <- make_a_circle(radius=1*2, color = "red", label = 4)
+circle_1 + circle_2 + circle_3 + circle_4
+```
+```{r}
+#| label: fig-stevens_power_law
+stevens_function_factory <- function(b) {
+    function(x) {
+        1 * x ^ b
+    }
+}
+plot_functions <- function(x,y,b,category,angle) {
+    list(
+    list(geom_function(fun = stevens_function_factory(b), linewidth = 1.2)),
+    list(geom_text(aes(x=x,y=y, label = category), angle=angle))
+    )
+}
+stevens_data <- tribble(
+  ~category         , ~b  , ~x , ~y , ~angle,
+  "Saturation (1.7)", 1.7 , 2.0, 4.0, 72,
+  "Length (1)"      , 1.0 , 4.1, 3.9, 45,
+  "Area (0.87)"     , 0.87, 4.0, 3.1, 35,
+  "Brightness (0.5)", 0.5 , 4.2, 1.8, 14.5,
+  "Duration (1.1)"  , 1.1 , 3.4, 4.3, 53
+)
+ggplot() +
+    ylim(0,5) +
+    pmap(stevens_data,plot_functions)+
+    xlim(0,5) +
+    coord_fixed(ratio = 1, expand = F) + 
+    theme_minimal() +
+    labs(x="Intensity", y = "Sensation") + 
+    theme(panel.grid.minor = element_blank())
+```
+```{r}
+#| label: fig-area_comparison
+#| code-fold: true
+#| echo: true
+base <- 100
+beta <- 0.87
+circle_comparison <- tribble(
+  ~id, ~area, 
+  1, base,
+  2, 4*base,
+  3, 9*base,
+  4, 16*base,
+) %>%
+  mutate(x = 1, 
+         r = sqrt(area/pi),
+         adj_area = base*(area/base)^(1/0.87),
+         adj_r = sqrt(adj_area/pi),
+         y = r,
+         adj_y = adj_r,
+         ) %>%
+  arrange(desc(area))
+custom_colors <- c("Piggy Pink" = "#F7DAE5",
+                   "Old Lace" = "#FFF2E1",
+                   "Columbia Blue" = "#C3E2E6",
+                   "Languid Lavender" = "#D0CCE0")
+actual_circles <- circle_comparison %>% 
+  ggplot() + 
+  ylim(c(0,56)) +
+  xlim(c(-28,28)) +
+  coord_fixed(ratio = 1, expand = T)+
+  theme_void()+
+  ggforce::geom_circle(aes(x0 = 0, y0 = y, r= r, fill = id), show.legend = F) +
+  geom_label(aes(x=0, y = 2*y-4, label = area)) +
+  scale_fill_continuous(type = "viridis")
+adjusted_circles <- circle_comparison %>% 
+  ggplot() + 
+  ylim(c(0,56)) +
+  xlim(c(-28,28)) +
+  coord_fixed(ratio = 1, expand = T)+
+  theme_void()+
+  ggforce::geom_circle(aes(x0 = 0, y0 = adj_y, r= adj_r, fill = id), show.legend = F) +
+  geom_label(aes(x=0, y = 2*adj_y-4, label = area)) +
+  scale_fill_continuous(type = "viridis")
+actual_circles + adjusted_circles
+# source https://files.eric.ed.gov/fulltext/ED045469.pdf
+```
+```{r}
+#| label: fig-proximity
+#| echo: false
+group1 <- tibble(x = runif(10, 0, 3)+7,
+                 y = runif(10, 0, 3),
+                 group = 1)
+group2 <- tibble(x = runif(10, 0, 3),
+                 y = runif(10, 0, 3)+6,
+                 group = 2)
+bind_rows(group1, group2) %>%
+  ggplot(aes(x,y)) + 
+  geom_point(size = 4, color = "steelblue") +
+  theme_void() +
+  xlim(0,10) +
+  ylim(0,10)
+```
+```{r}
+#| label: fig-similarity
+#| echo: false
+group1 <- tibble(x = runif(10, 0, 10),
+                 y = runif(10, 0, 10),
+                 group = "1")
+group2 <- tibble(x = runif(10, 0, 10),
+                 y = runif(10, 0, 10),
+                 group = "2")
+bind_rows(group1, group2) %>%
+  ggplot(aes(x,y, shape = group)) + 
+  geom_point(size = 4, show.legend = F, color = "steelblue") +
+  theme_void() +
+  xlim(0,10) +
+  ylim(0,10)
+
+
+ # paste(round(group2$x,2), round(group2$y,2), sep="/", collapse = ", ") |> clipr::write_clip()
+```
+```{r}
+#| label: fig-enclosure
+#| echo: false
+set.seed(4249)
+tibble(
+  x = runif(20, 0, 10),
+  y = runif(20, 0, 10)
+) %>%
+  ggplot(aes(x, y)) +
+  ggforce::geom_ellipse((aes(x0 = 6.5, y0 = 7, a = 3, b = 3, angle = 0)), fill = "lightblue", color = "white") +
+  geom_point(size = 4, show.legend = F, color = "steelblue") +
+  theme_void() +
+  xlim(0, 10) +
+  ylim(0, 10)
+
+
+```
+```{r}
+#| label: fig-closure
+#| echo: false
+set.seed(228)
+tibble(
+  x = runif(20, 0, 10),
+  y = runif(20, 0, 10)
+) %>%
+  ggplot() +
+  geom_point(aes(x, y),size = 4, show.legend = F, color = "steelblue") +
+  geom_text(aes(x = 7, y = 4, label = "(       )"), size = 30, fontface = "plain", color = "red") +
+theme_void() +
+  xlim(0, 10) +
+  ylim(0, 10) 
+
+```
+```{r}
+#| label: fig-connectivity
+#| echo: false
+set.seed(1337)
+group1 <- tibble(x = runif(15, 0, 10),
+                 y = runif(15, 0, 10),
+                 group = 1)
+
+group2 <- tibble(x = runif(6, 0, 10),
+                 y = runif(6, 0, 10),
+                 group = 2)
+
+bind_rows(group1, group2) %>%
+  ggplot(aes(x, y)) +
+  geom_line(data = group2, aes(group = group), linewidth =1.5, color = "red") +
+  geom_point(size = 5, show.legend = F, color = "steelblue") +
+  theme_void() +
+  xlim(0, 10) +
+  ylim(0, 10)
+
+
+   # paste(
+   # if_else(round(group1$x,2) > 0.5, round(group1$x,2) - 0.5,round(group1$x,2) + 0.5),
+   # if_else(round(group1$y,2) > 0.5, round(group1$y,2) - 0.5,round(group1$y,2) + 0.5), sep = "/", collapse = ", ") |> clipr::write_clip()
+```
+```{r}
+#| eval: false
+#| include: false
+library(colorspace)
+group1 <- tibble(x = runif(25, 0, 10),
+                 y = runif(25, 0, 10),
+                 a = runif(25, -80, 100),
+                 b = runif(25, -80, 100),
+                 group = "1")
+
+map(
+  group1$a, group1$b,
+  \(a, b) {
+    rgb_rep <- as(LAB(100, a, b), "RGB")
+    rgb(rgb_rep[, 1], rgb_rep[, 2], rgb_rep[, 3])
+  }
+)
+
+rgb_rep <- as(LAB(70,group1$a,group1$b), "RGB") 
+rgb_rep <- attr(rgb_rep, "coords")
+clamp <- function(x) {pmin(pmax(x, 0), 0.8)}
+colors <- rgb(
+  clamp(rgb_rep[,1]),
+  clamp(rgb_rep[,2]),
+  clamp(rgb_rep[,3]))
+
+group1 %>%
+  mutate(color = colors) %>%
+  ggplot(aes(x,y, color = color)) + 
+  geom_point(size = 4, show.legend = F) +
+  theme_void() +
+  scale_color_identity() +
+  xlim(0,10) +
+  ylim(0,10) 
+
+complete(
+         tibble(
+           x = rep(1:5, 5),
+         y = rep(1:5, 5)), x, y
+) |> distinct()%>%
+  mutate(
+      # color = colors,
+         r = round(clamp(rgb_rep[,1]),2),
+         g = round(clamp(rgb_rep[,2]),2),
+         b = round(clamp(rgb_rep[,3]),2),
+         text = paste(r, g, b, x, y, sep = "/"),
+ )|> pull(text) |> paste(collapse = ", ") |>
+  clipr::write_clip()
+
+
+
+list <- complete(
+         tibble(
+           x = rep(1:5, 5),
+           y = rep(1:5, 5)), 
+         x, y
+) |> distinct()%>%
+  mutate(
+    group = rbinom(25,1,0.5),
+    color = if_else(rbinom(25,1,0.5) == 1, "red", "black"),
+         text = paste(x, y, color, sep = "/"),
+ ) |>
+  group_by(group) |>
+  group_split()
+
+list[[1]]$text |> paste(collapse = ", ") |>
+  clipr::write_clip()
+
+list[[2]]$text |> paste(collapse = ", ") |>
+  clipr::write_clip()
+
+
+
+
+         tibble(
+           x = c(runif(7, 0, 2), runif(7, 0, 2) +4),
+           y = c(runif(7, 0, 1), runif(7, 0, 1)),
+           color = if_else(rbinom(14,1,0.5) == 1, "red", "black")
+) |> 
+          ggplot(aes(x,y))+geom_point()
+           
+
+tibble(
+           x = round(c(runif(7, 0, 4), runif(7, 0, 4) +6),2),
+           y = round(c(runif(7, 0, 4), runif(7, 0, 4)),2),
+           color = if_else(rbinom(14,1,0.5) == 1, "red", "black"),
+         text = paste(x, y, color, sep = "/"),
+ ) |> pull(text) |>paste(collapse = ", ") |> clipr::write_clip()
+
+list[[1]]$text |> paste(collapse = ", ") |>
+  clipr::write_clip()
+
+list[[2]]$text |> paste(collapse = ", ") |>
+  clipr::write_clip()
+
+paste(round(coords$x,2), round(coords$y,2), sep = "/", collapse = ", ") |> clipr::write_clip()
+
+
+
+
+
+complete(tibble(x = 1:6, y = 1:6), x, y) %>%
+  mutate(color = ifelse(x >= 1 & x <=2, "red","black"),
+         text = paste(x, y, color, sep = "/"),
+ ) |> pull(text) |> paste(collapse = ", ") |> clipr::write_clip()
+
+shapes <- complete(tibble(x = 1:6, y = 1:6), x, y) %>%
+  mutate(color = ifelse(y > 2 & y < 5, "red","black")) %>%
+  mutate(shape = ifelse(x > 2 & x < 5, T,F),
+         text = paste(x, y, color, sep = "/"),
+ ) |>
+  group_by(shape) |>
+  group_split()
+
+shapes[[2]]$text |> paste(collapse = ", ") |> clipr::write_clip()
+
+shapes <- complete(tibble(x = 1:6, y = 1:6), x, y) %>%
+  mutate(color = ifelse(y <= 2, "red","black")) %>%
+  mutate(shape = ifelse(sample(0:1,size = nrow(.),replace = TRUE), T,F),
+         text = paste(x, y, color, sep = "/"),
+ ) |>
+  group_by(shape) |>
+  group_split()
+
+shapes <- complete(tibble(x = 1:6, y = 1:6), x, y) %>%
+  mutate(shape = ifelse(x >= 5, T,F)) %>%
+  mutate(color = ifelse(sample(0:1,size = nrow(.),replace = TRUE), "red","black"),
+         text = paste(x, y, color, sep = "/"),
+ ) |>
+  group_by(shape) |>
+  group_split()
+
+ complete(
+         tibble(
+           x = rep(1:4),
+           y = rep(1:4)), 
+         x, y
+) |>
+   distinct() |>
+   mutate(
+     x = round(map_dbl(x,\(x) x + rnorm(1,0,0.15)),2),
+     y = round(map_dbl(y,\(y) y + rnorm(1,0,0.15)),2),
+     text = paste(x,y,sep="/")
+   ) |>
+   arrange(x)|>
+   pull(text) |>
+   paste(collapse = ", ") |>
+   clipr::write_clip()
+ 
+   ggplot(aes(x,y)) + geom_point()
+   
+   
+```

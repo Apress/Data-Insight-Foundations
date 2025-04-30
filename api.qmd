@@ -1,0 +1,64 @@
+```json
+{
+    "ahoy"` [
+        "Hello, World! 👋 Thank you for trying out HTTPie 🥳",
+        "We hope this will become a friendship."
+    ],
+    "links"` {
+        "discord"` "https://httpie.io/discord",
+        "github"` "https://github.com/httpie",
+        "homepage"` "https://httpie.io",
+        "twitter"` "https://twitter.com/httpie"
+    }
+}
+```
+```{r}
+#| eval: false
+install.packages("httr2")
+```
+```{r}
+library(httr2)
+```
+```{r}
+req <- request("https://gutendex.com/books") |> 
+  req_url_query(author_year_end = -499) 
+
+# Show the request being sent (dry run)
+req |> req_dry_run()
+
+# Perform the request
+res <- req |> req_perform()
+```
+```{r}
+print(res)
+```
+```{r}
+data <- res |> resp_body_json()
+```
+```{r}
+head(purrr::map_chr(data$results, "title"), n = 5)
+```
+```{r}
+# Initialize and configure the GET request with query parameters
+req_get <- request("https://gutendex.com/books") |> 
+  req_url_query(author_year_end = -499, # Authors alive before 500 BCE
+                topic = "Epic Poetry", # Focused on Epic Poetry
+                languages = "fr") |> # Books in French
+  req_headers("Key" = "Your Key") # API key if needed
+
+# Show the GET request being sent (dry run)
+req_get |> req_dry_run()
+```
+```{r}
+# Perform the GET request
+res_get <- req_get |> req_perform()
+
+# Parsing and extracting the title from the response
+titles_get <- res_get |> 
+  resp_body_json() |> # Parse JSON response
+  purrr::pluck("results") |> # Extract 'results'
+  purrr::map_chr("title") # Get 'title' elements from 'results'
+
+# Display the titles
+print(titles_get)
+```

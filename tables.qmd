@@ -1,0 +1,269 @@
+```{r}
+# install.packages(c("gt","gtExtras","emojifont"))
+library(dplyr)
+library(gt)
+library(gtExtras)
+library(emojifont)
+```
+```{r}
+#| include: false
+set.seed(442)
+```
+```{r}
+gt::gtcars %>%
+  select(-trim) %>%
+  dplyr::sample_n(size = 4) %>%
+  gt()
+```
+```{r}
+table_grouped <- gt::gtcars %>%
+  select(-trim) %>%
+  filter(ctry_origin == "Germany") %>% # Filter to German cars
+  group_by(mfr) %>% # Group by the manufacturer
+  arrange(desc(msrp)) %>% # Arrange in descending order on price
+  slice_head(n = 2) %>% # Select the top two cars
+  filter(mfr %in% c("Audi", "BMW")) %>% # Filter to only Audi and BMW cars
+  gt::gt(rowname_col = "model") # gt table with car models as row names
+
+table_grouped
+```
+```{r}
+table_span <- table_grouped %>%
+  gt::cols_hide( # Hide certain columns 
+    columns = c(bdy_style, drivetrain, ctry_origin, trsmn)
+  ) %>%
+  gt::cols_move( # Move specific columns after the `year` 
+    columns = c(msrp, trsmn, mpg_c, mpg_h),
+    after = year
+  ) %>%
+  gt::tab_spanner( # Create a spanner header 
+    columns = c(mpg_c, mpg_h, hp, hp_rpm, trq, trq_rpm),
+    label = "Performance"
+  )
+
+table_span
+```
+```{r, eval=knitr::is_html_output()}
+table_merge <- table_span %>%
+  # Merge the horsepower (hp) and horsepower rpm (hp_rpm) columns.
+  cols_merge(columns = c(hp, hp_rpm), pattern = "{1}<br>@{2}rpm") %>%
+  # Merge the torque (trq) and torque rpm (trq_rpm) columns.
+  cols_merge(columns = c(trq, trq_rpm), pattern = "{1}<br>@{2}rpm") %>%
+  # Merge the city mpg (mpg_c) and highway mpg (mpg_h) columns.
+  cols_merge(columns = c(mpg_c, mpg_h), pattern = "{1}c<br>{2}h") %>%
+  cols_label( # Set custom labels for specific columns.
+    year = "Year",
+    msrp = "MSRP",
+    mpg_c = "MPG",
+    hp = "Horse Power",
+    trq = "Torque"
+  )
+
+table_merge
+```
+```{r, eval=knitr::is_latex_output(), echo=FALSE}
+# Start with the previously created `table_span`.
+table_merge <- table_span %>%
+# Merge the horsepower (hp) and horsepower rpm (hp_rpm) columns.
+cols_merge(columns = c(hp, hp_rpm), pattern = r"(\makecell{{{1} \\ @{2}rpm}})") %>%
+# cols_merge(columns = c(hp, hp_rpm), pattern = "{1}<br>@{2}rpm") %>%
+# Merge the torque (trq) and torque rpm (trq_rpm) columns.
+cols_merge(columns = c(trq, trq_rpm), pattern = r"(\makecell{{{1} \\ @{2}rpm}})") %>%
+# cols_merge(columns = c(trq, trq_rpm), pattern = "{1}<br>@{2}rpm") %>%
+# Merge the city mpg (mpg_c) and highway mpg (mpg_h) columns.
+cols_merge(columns = c(mpg_c, mpg_h), pattern = r"(\makecell{{{1}c \\ {2}h}})") %>%
+# cols_merge(columns = c(mpg_c, mpg_h), pattern = "{1}c<br>{2}h") %>%
+cols_label( # Set custom labels for specific columns.
+year = "Year",
+msrp = "MSRP",
+mpg_c = "MPG",
+hp = "Horse Power",
+trq = "Torque"
+)
+
+table_merge
+```
+```{r}
+table_format <- table_merge %>%
+  # Format the msrp column as currency
+  fmt_currency(columns = msrp, decimals = 0, currency = "USD") %>%
+  # Center align specific columns
+  cols_align(columns = c(mpg_c, hp, trq), align = "center") %>%
+  tab_style( # Apply cell text style to specific columns
+    style = cell_text(size = "12px"),
+    locations = cells_body(columns = c(mpg_c, hp, trq))
+  ) %>%
+  # Apply a data-driven color scale to the msrp column
+  data_color(columns = msrp, colors = c("white", "aquamarine"))
+
+table_format
+```
+```{r}
+table_header <- table_format %>%
+tab_header(title = "German Automobiles", # Add a title and a subtitle with an emoji.
+           subtitle = paste0("These are some nice ", emojifont::emoji("car"), "s")) %>%
+# Add a footnote to clarify what MSRP stands for.
+tab_footnote(locations = cells_column_labels(columns = msrp),
+             footnote = "Manufacturer's Suggested Retail Price in USD") %>%
+# Add a footnote to the most expensive car
+tab_footnote(locations = cells_body(msrp, msrp == max(msrp)),
+             footnote = "Electric cars used to be expensive") %>%
+# Add a source note to cite the source of the data.
+tab_source_note(source_note = md("Source: **gtcars** [dataset from gt package](https://gt.rstudio.com/articles/gt-datasets.html)"))
+
+table_header
+```
+```{r}
+# Add Five Thirty Eight theme to the table
+(table_themed <- table_header %>% gtExtras::gt_theme_538())
+```
+```{r eval = FALSE}
+gtsave(table_themed, filename = "tab_1.html", inline_css = TRUE)
+gtsave(table_themed, "tab_1.png", expand = 10)
+gtsave(table_themed, "tab_1.tex")
+gtsave(table_themed, "tab_1.pdf")
+gtsave(table_themed, "tab_1.docx")
+```
+```{r, eval=knitr::is_html_output()}
+library(dplyr)
+library(gt)
+library(gtExtras)
+library(emojifont)
+gt::gtcars %>%
+  select(-trim) %>%
+  filter(ctry_origin == "Germany") %>%
+  group_by(mfr) %>%
+  arrange(desc(msrp)) %>%
+  slice_head(n = 2) %>%
+  filter(mfr %in% c("Audi", "BMW")) %>%
+  gt::gt(rowname_col = "model") %>%
+  gt::cols_hide(
+    columns = c(bdy_style, drivetrain, ctry_origin, trsmn)
+  ) %>%
+  gt::cols_move(
+    columns = c(msrp, trsmn, mpg_c, mpg_h),
+    after = year
+  ) %>%
+  gt::tab_spanner(
+    columns = c(mpg_c, mpg_h, hp, hp_rpm, trq, trq_rpm),
+    label = "Performance"
+  ) %>%
+  cols_merge(columns = c(hp, hp_rpm), pattern = "{1}<br>@{2}rpm") %>%
+  cols_merge(columns = c(trq, trq_rpm), pattern = "{1}<br>@{2}rpm") %>%
+  cols_merge(columns = c(mpg_c, mpg_h), pattern = "{1}c<br>{2}h") %>%
+  cols_label(
+    year = "Year",
+    msrp = "MSRP",
+    mpg_c = "MPG",
+    hp = "Horse Power",
+    trq = "Torque"
+  ) %>%
+  fmt_currency(columns = msrp, decimals = 0, currency = "USD") %>%
+  cols_align(columns = c(mpg_c, hp, trq), align = "center") %>%
+  tab_style(
+    style = cell_text(size = "12px"),
+    locations = cells_body(columns = c(mpg_c, hp, trq))
+  ) %>%
+  data_color(columns = msrp, colors = c("white", "aquamarine")) %>%
+  tab_header(
+    title = "German Automobiles",
+    subtitle = paste0("These are some nice ", emojifont::emoji("car"), "s")
+  ) %>%
+  tab_footnote(
+    locations = cells_column_labels(columns = msrp),
+    footnote = "Manufacturer's Suggested Retail Price in USD"
+  ) %>%
+  tab_footnote(
+    locations = cells_body(msrp, msrp == max(msrp)),
+    footnote = "Electric cars used to be expensive"
+  ) %>%
+  tab_source_note(source_note = md("Source: **gtcars** [dataset from gt package](https://gt.rstudio.com/articles/gt-datasets.html)")) %>%
+  gtExtras::gt_theme_538()
+```
+```{r, eval=knitr::is_latex_output(), echo=FALSE}
+# Load the necessary libraries for data manipulation and
+# visualization.
+library(tidyverse)
+library(gt)
+library(gtExtras)
+library(emojifont)
+
+# Create a formatted table of German automobiles
+gt::gtcars %>% # Load the data.
+  # Filter the data to include only cars that originated from Germany.
+  filter(ctry_origin == "Germany") %>%
+  group_by(mfr) %>% # Group the data by the manufacturer.
+  # Arrange the data in descending order based on the Manufacturer's
+  # Suggested Retail Price (MSRP).
+  arrange(desc(msrp)) %>%
+  # Start a new gt table using the car models as row names.
+  gt(rowname_col = "model") %>%
+  # Hide certain columns that aren't needed in the final table.
+  cols_hide(columns = c(trim, bdy_style, drivetrain, ctry_origin, trsmn)) %>%
+  # Move specific columns to appear after the trim column.
+  cols_move(columns = c(msrp, trsmn, mpg_c, mpg_h), after = trim) %>%
+  # Create a spanner header for performance-related columns.
+  tab_spanner(columns = c(mpg_c, mpg_h, hp, hp_rpm, trq, trq_rpm), label = "Performance") %>%
+  # Merge the horsepower (hp) and horsepower rpm (hp_rpm) columns.
+  # cols_merge(columns = c(hp, hp_rpm), pattern = "{1}<br>@{2}rpm") %>%
+   cols_merge(columns = c(hp, hp_rpm), pattern = r"(\makecell{{{1} \\ @{2}rpm}})") %>%
+  # Merge the torque (trq) and torque rpm (trq_rpm) columns.
+  # cols_merge(columns = c(trq, trq_rpm), pattern = "{1}<br>@{2}rpm") %>%
+   cols_merge(columns = c(trq, trq_rpm), pattern = r"(\makecell{{{1} \\ @{2}rpm}})") %>%
+  # Merge the city mpg (mpg_c) and highway mpg (mpg_h) columns.
+  # cols_merge(columns = c(mpg_c, mpg_h), pattern = "{1}c<br>{2}h") %>%
+   cols_merge(columns = c(mpg_c, mpg_h), pattern = r"(\makecell{{{1}c \\ {2}h}})") %>%
+  cols_label( # Set custom labels for specific columns.
+    year = "Year",
+    msrp = "MSRP",
+    mpg_c = "MPG",
+    hp = "Horse Power",
+    trq = "Torque"
+  ) %>%
+  # Format the MSRP column as currency in USD.
+  fmt_currency(columns = msrp, decimals = 0, currency = "USD") %>%
+  # Center align specific columns.
+  cols_align(columns = c(mpg_c, hp, trq), align = "center") %>%
+  tab_style( # Apply a specific text style to certain columns.
+    style = cell_text(size = "12px"),
+    locations = cells_body(columns = c(mpg_c, hp, trq))
+  ) %>%
+  # Apply a data-driven color scale to the MSRP column.
+  data_color(columns = msrp, colors = c("white", "aquamarine")) %>%
+  # Add a title and subtitle to the table.
+  tab_header(title = "German Automobiles", subtitle = paste0("These are some nice ", emojifont::emoji("car"), "s")) %>%
+  # Add a footnote to clarify what MSRP stands for.
+  tab_footnote(locations = cells_column_labels(columns = msrp), footnote = "Manufacturer's Suggested Retail Price in USD") %>%
+  # Add a footnote to the most expensive car, noting that electric cars
+  # used to be expensive.
+  tab_footnote(locations = cells_body(msrp, msrp == max(msrp)), footnote = "Electric cars used to be expensive") %>%
+  # Add a source note to cite the source of the data.
+  tab_source_note(source_note = md("Source: **gtcars** [dataset from gt package](https://gt.rstudio.com/articles/gt-datasets.html)")) %>%
+  # Apply a theme to the table for a more polished look.
+  gtExtras::gt_theme_538()
+```
+```{r, eval = knitr::is_html_output()}
+library(DT)
+
+german_cars <- gt::gtcars %>%
+  # Filter the `gtcars` dataset to include only cars from Germany.
+  filter(ctry_origin == "Germany") %>%
+  select(mfr, model, year, trim, bdy_style, hp)
+
+
+# Display the `german_cars` dataframe as a DT table with buttons, custom options, and initial settings.
+datatable(
+  german_cars, 
+  extensions = "Buttons", # Enable Buttons extension
+  options = list(
+    dom = "Bfrtip", # Table control elements and their order
+    buttons = c("copy", "csv", "excel", "pdf", "print"), # Add action buttons
+    pageLength = 5, # Rows per page
+    autoWidth = TRUE, # Adjust column width
+    order = list(list(1, "asc")), # Initial sorting order
+    searching = TRUE, # Enable search
+    searchHighlight = TRUE, # Highlight search matches
+    lengthChange = TRUE # Allow changing entries per page
+  )
+)
+```

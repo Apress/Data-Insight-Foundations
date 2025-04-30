@@ -1,0 +1,56 @@
+```{r}
+#| echo: "fenced"
+#| label: fig-plots
+#| fig-cap: Plots
+#| fig-subcap: 
+#|   - "Sunspot"
+#|   - "US Population"
+#| layout-ncol: 2
+#| code-fold: show
+#| code-summary: "Collapse Code"
+
+# sunspot.year and uspop are built-in datasets in R
+plot(sunspot.year)
+plot(uspop)
+```
+``` 
+::: {layout-ncol="2"}
+![Mellow](./images/mellow_jess.png)
+
+![Angry](./images/angry_jess.png)
+:::
+```
+```         
+:::: column-margin
+
+::: callout-note
+Here is a Note!
+:::
+
+More content.
+::::
+```
+```{.markdown shortcodes="false"}
+First Page
+
+{{< pagebreak >}}
+
+Second Page
+```
+```{mermaid, label = "fig-mermaid_example"}
+flowchart LR
+  A[Hard edge] --> B(Round edge)
+  B --> C{Decision}
+  C --> D[Result one]
+  C --> E[Result two]
+```
+```
+bibliography: references.bib
+```
+```{r, eval=FALSE}
+bbt_update_bib(
+  path_rmd, # Path to your Markdown document.
+  path_bib = bbt_guess_bib_file(path_rmd), # Path to the references.bib file
+  translator = bbt_guess_translator(path_bib), # Bibliography file type: CSL-JSON, BibLaTeX, BibTeX, CSL YAML.
+)
+```

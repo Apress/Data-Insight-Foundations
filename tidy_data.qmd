@@ -1,0 +1,117 @@
+```{r include = F}
+library(tidyverse)
+knitr::opts_chunk$set(echo = T, warning = F, message = F, error = F)
+```
+```{css, echo = FALSE}
+.output {
+max-height: 300px;
+overflow-y: scroll;
+}
+```
+```{r}
+(data_raven <- readr::read_csv(
+  "https://raw.githubusercontent.com/nikitoshina/quarto_book/main/raven_data.csv"
+  ))
+```
+```{r}
+data_raven %>%
+  pivot_longer(c(pr_correct, tr_correct, ch_correct), names_to = "game", values_to = "n_correct") %>%
+  select(id, game, n_correct) 
+```
+```{r echo=FALSE}
+data_raven_accident <- data_raven %>%
+  select(id, mean_temp_celsius, ch_tournament) %>%
+  pivot_longer(-id)
+```
+```{r}
+data_raven_accident 
+```
+```{r}
+data_raven_accident %>%
+  pivot_wider(names_from = name, values_from = value)
+```
+```{r include = F}
+data_raven_sep <- data_raven %>%
+  select(id, gender, pr_correct) %>%
+  unite("gender/pr_correct", c(gender, pr_correct), sep = "/")
+
+data_raven_uni <- data_raven %>%
+  select(id, gender) %>%
+  mutate(site_id = str_sub(id, start = 1, end = 3), session_n = str_sub(id, start = 4, end = 6), subject_n = str_sub(id, start = 7, end = 9)) %>%
+  select(-id) %>%
+  relocate(gender, .after = subject_n)
+```
+```{r}
+data_raven_sep 
+```
+```{r}
+data_raven_sep %>%
+  separate_wider_delim(col = "gender/pr_correct", delim = "/", names = c("gender", "pr_correct")) 
+```
+```{r}
+data_raven_uni 
+```
+```{r}
+data_raven_uni %>%
+  unite(c(site_id, session_n, subject_n), col = "id", sep = "") 
+```
+```{r}
+tibble(
+  x = c(1, 2, 3),
+  y = c("one", "two", "three")
+)
+```
+```{r}
+tribble(
+  ~x, ~y,
+  1, "one",
+  2, "two",
+  3, "three"
+)
+```
+```{r}
+# Create a data.frame with dirty names
+df_dirty_names <- as.data.frame(matrix(ncol = 6))
+names(df_dirty_names) <- c(
+  "camelCase", "ábc@!*", "% of respondents (2009)",
+  "Duplicate", "Duplicate", ""
+)
+df_dirty_names %>% colnames()
+```
+```{r}
+library(janitor)
+df_dirty_names %>%
+  clean_names() %>%
+  colnames()
+```
+```{r}
+# Create data.frame with NA values
+df_na_values <- data.frame(
+  numbers = c(1, NA, 3),
+  food = c(NA, NA, NA),
+  letters = c("a", NA, "c")
+)
+df_na_values
+df_na_values %>%
+  remove_empty(c("rows", "cols"))
+```
+```{r}
+# Create data.frame with a column containing constant value
+df_constant <- data.frame(cool_numbers = 1:3, boring = "the same")
+df_constant
+df_constant %>% remove_constant()
+```
+```{r}
+convert_to_date(36922.75) # Date
+convert_to_datetime(36922.75) # Date and time
+```
+```{r}
+# Create data.frame with column names in a row
+df_row_names <- data.frame(
+  x_1 = c(NA, "Names", 1:3),
+  x_2 = c(NA, "Value", 4:6)
+)
+df_row_names
+# Elevate a row to be the column names
+row_to_names(df_row_names, 2)
+```

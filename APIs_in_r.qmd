@@ -1,0 +1,129 @@
+```{r}
+#| include: false
+library("tidyverse")
+library("scales")
+library("googlesheets4")
+library("gargle")
+```
+```{r}
+# install.packages("qualtRics")
+library("qualtRics")
+```
+```{r}
+#| eval: false
+qualtrics_api_credentials(
+  api_key = "YOUR_API_KEY",
+  base_url = "YOUR_BASE_URL",
+  install = TRUE,
+  # overwrite = TRUE # If you need to update your credentials
+)
+```
+```{r}
+#| cache: true
+head(surveys <- all_surveys(),3) 
+```
+```{css, echo = FALSE}
+.output {
+max-height: 300px;
+overflow-y: scroll;
+}
+```
+```{r}
+#| cache: true
+#| class: output
+survey_data <- fetch_survey(
+  surveyID = "SV_bJIs8lwz4CfAAgS",
+  verbose = FALSE,
+  force_request = TRUE
+)
+survey_data %>% 
+  select(StartDate, `Duration (in seconds)`, 
+         Finished, Gender, offer, 
+         decision...81, participantRole) %>% 
+  glimpse()
+```
+```{r}
+#| cache: true
+head(survey_questions <- survey_questions(surveyID = "SV_bJIs8lwz4CfAAgS"), n = 5)
+```
+```{r}
+#| eval: false
+options(gargle_oauth_cache = ".secrets")
+googlesheets4::gs4_auth()
+list.files(".secrets/")
+gs4_auth(cache = ".secrets", email="name@mail.com")
+```
+```{r}
+#| eval: false
+library(googlesheets4)
+
+url <- "https://docs.google.com/spreadsheets/d/your_spreadsheet_id_here"
+data <- read_sheet(url, sheet = "Your Sheet Name")
+head(data)
+```
+```{r}
+#| eval: false
+data_to_write <- data.frame(
+  Column1 = c("Data1", "Data2"),
+  Column2 = c("Data3", "Data4")
+)
+
+write_sheet(data = data_to_write, ss = url, sheet = "Your Sheet Name")
+```
+```{r}
+#| eval: false
+library(googledrive)
+drive_auth(cache = ".secrets")
+print(drive_ls())
+file <- drive_get(path = "YourFileName")
+data <- read_csv(drive_download(file, overwrite = TRUE))
+```
+```{r}
+#| eval: false
+data_to_write <- data.frame(
+  Column1 = c("Data1", "Data2"),
+  Column2 = c("Data3", "Data4")
+)
+
+write.csv(data_to_write, "data_to_write.csv")
+drive_upload("data_to_write.csv", path = "FolderName/data_to_write.csv")
+```
+```{r}
+# install.packages("openai")
+library("openai")
+```
+```{r}
+#| eval: false
+Sys.setenv(
+    OPENAI_API_KEY = 'YOUR_KEY'
+)
+```
+```{r}
+#| cache: true
+chat <- create_chat_completion(
+  # Specify a model to use
+  model = "gpt-4-1106-preview",
+  # Pass a list of messages based on roles.
+  messages = list(
+    list(
+      "role" = "system",
+      "content" = "As an expert summarizer, condense the following paragraph into one succinct sentence."
+    ),
+    list(
+      "role" = "user",
+      "content" = "R is a programming language for statistical computing and graphics supported by the R Core Team and the R Foundation for Statistical Computing. Created by statisticians Ross Ihaka and Robert Gentleman, R is used among data miners, bioinformaticians and statisticians for data analysis and developing statistical software.[7] The core R language is augmented by a large number of extension packages containing reusable code and documentation."
+    )
+  )
+)
+
+chat$choices$message.content
+```
+```{r}
+#| cache: true
+image <- create_image("Frog-blossom cartoon in greyscle color", size = "256x256")
+download.file(image$data$url, "images/openai_image.png", mode = 'wb')
+```
+```{r}
+#| cache: true
+create_transcription(file = "data/whisper_demo.m4a", model = "whisper-1")
+```

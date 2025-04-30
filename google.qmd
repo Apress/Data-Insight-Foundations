@@ -1,0 +1,37 @@
+```{r}
+library(googlesheets4)
+
+url <- "https://docs.google.com/spreadsheets/d/your_spreadsheet_id_here"
+data <- read_sheet(url, sheet = "Your Sheet Name")
+head(data)
+```
+```{r}
+data_to_write <- data.frame(
+  Column1 = c("Data1", "Data2"),
+  Column2 = c("Data3", "Data4")
+)
+
+write_sheet(data = data_to_write, ss = url, sheet = "Your Sheet Name")
+```
+```{r}
+options(gargle_oauth_cache = ".secrets")
+gs4_auth()
+list.files(".secrets/")
+gs4_auth(cache = ".secrets", email="name@mail.com")
+```
+```{r}
+library(googledrive)
+drive_auth(cache = ".secrets_drive")
+print(drive_ls())
+file <- drive_get(path = "YourFileName")
+data <- read_csv(drive_download(file, overwrite = TRUE))
+```
+```{r}
+data_to_write <- data.frame(
+  Column1 = c("Data1", "Data2"),
+  Column2 = c("Data3", "Data4")
+)
+
+write.csv(data_to_write, "data_to_write.csv")
+drive_upload("data_to_write.csv", path = "FolderName/data_to_write.csv")
+```

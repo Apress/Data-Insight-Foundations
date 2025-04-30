@@ -1,0 +1,63 @@
+```{r}
+x <- c(1, 2, 3)
+df <- data.frame(x = c(x, 1), y = c(x * 2, 2))
+# Stops execution if `x` isn't numeric.
+if (!is.numeric(x)) stop("x is not numeric!")
+stopifnot(is.numeric(x)) # Halts if `x` isn't numeric.
+# Stops the process if `x` contains non-positive values.
+if (!all(x > 0)) stop("x contains non-positive values!")
+# Halts execution if `x` has duplicates.
+if (any(duplicated(x))) stop("x contains duplicated values!")
+# Issues a warning if `df` has duplicate rows.
+if (any(duplicated(df))) warning("df has duplicated rows!")
+```
+```{r}
+#| error: true
+library(assertr)
+library(magrittr)
+
+data(mtcars)
+
+mtcars %>%
+verify(nrow(.) > 0) %>% # Verify dataset isn't empty.
+# Assert that specified Engine Types are present in row names.
+assert(in_set(0, 1), vs) %>%
+# Ensure that at least one 'mpg' value is within two standard
+# deviations.
+insist(within_n_sds(2), mpg)
+```
+```{r}
+library(pointblank)
+
+agent <- create_agent(
+  tbl_name = "a simple mtcars data validation",
+  label = "an example of using pointblank for data validation",
+  tbl = mtcars # attach the data frame to validate
+)
+```
+```{r}
+agent <- agent %>%
+# Check if 'mpg' values are greater than 10.
+col_vals_gt(vars(mpg), value = 10) %>%
+# Check if 'hp' values are less than or equal to 300.
+col_vals_lte(vars(hp), value = 300) %>%
+# Check if 'vs', 'am', and absent columns exist.
+col_exists(vars(vs, am, absent)) %>%
+# Check if 'cyl' and 'gear' columns have no missing values.
+col_vals_not_null(vars(cyl, gear))
+```
+```{r}
+(report <- interrogate(agent, extract_failed = T))
+```
+```{r}
+#| eval: false
+(report <- interrogate(agent, extract_failed = T))
+```
+```{r}
+#| echo: false
+#| include: false
+report <- interrogate(agent, extract_failed = T)
+```
+```{r}
+report$extracts$`2` # `2` refers to the check number
+```

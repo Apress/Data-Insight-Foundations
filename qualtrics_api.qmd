@@ -1,0 +1,101 @@
+```{r}
+library("tidyverse")
+# install.packages("qualtRics")
+library("qualtRics")
+library("scales")
+```
+```{r eval=FALSE}
+qualtrics_api_credentials(
+  api_key = "YOUR_API_KEY",
+  base_url = "YOUR_BASE_URL",
+  install = TRUE,
+  # overwrite = TRUE # If you need to update your credentials
+)
+```
+```{r eval=FALSE}
+qualtrics_api_credentials(
+  api_key = "CEOj8Iwh6BUTNZ9J7PXDJLZpStQaXkmlwLPYzCgu",
+  base_url = "lad2.qualtrics.com",
+  install = TRUE
+)
+```
+```{r cache=TRUE}
+(surveys <- all_surveys()) 
+```
+```{css, echo = FALSE}
+.output {
+max-height: 300px;
+overflow-y: scroll;
+}
+```
+```{r}
+#| cache: true
+#| class: output
+survey_data <- fetch_survey(
+  surveyID = "SV_bJIs8lwz4CfAAgS",
+  verbose = FALSE,
+  force_request = TRUE
+)
+survey_data %>% glimpse()
+colnames(survey_data)
+```
+```{r cache=TRUE}
+survey_questions <- survey_questions(surveyID = "SV_bJIs8lwz4CfAAgS")
+head(survey_questions, n = 5)
+```
+```{r cache=TRUE}
+survey_data <- fetch_survey(
+  surveyID = "SV_bJIs8lwz4CfAAgS",
+  verbose = FALSE, force_request = TRUE
+)
+
+survey_data <- survey_data %>% janitor::clean_names()
+
+graph_data <- survey_data %>%
+  select(gender, offer, decision_81, participant_id, participant_role) %>%
+  mutate(
+    participant_role = recode(participant_role, "A" = "dictator", "B" = "recipient"),
+    decision = recode(decision_81, "1" = "Accepted", "2" = "Declined")
+  ) %>%
+  mutate(interval = cut_width(offer, width = 10, center = 45)) %>%
+  filter(participant_role == "recipient") %>%
+  count(decision, interval)
+```
+```{r}
+#| label: fig-ultimatum_game
+#| code-summary: "Show the code"
+graph_data %>%
+  ggplot(aes(x = interval, y = n, fill = as.factor(decision))) +
+  geom_col(position = position_stack()) +
+  theme_minimal(base_size = 20) +
+  scale_y_continuous(breaks = scales::breaks_extended(n = max(graph_data$n))) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    legend.position = "top"
+  ) +
+  labs(x = "Offer size", y = "Count", title = "Results of the Ultimatum Game", fill = "Result")
+```
+```{r}
+#| include: false
+#| code-fold: true
+#| code-summary: "Show the code"
+pizza_table <- survey_data[c(22:29, 72)] %>%
+  select(-pizzas_6) %>%
+  pivot_longer(-participant_id) %>%
+  count(value) %>%
+  drop_na()
+
+pizza_table %>% ggplot(aes(x = fct_reorder(value, n), y = n)) +
+  geom_col(fill = "steelblue") +
+  theme_minimal(base_size = 20) +
+  scale_y_continuous(breaks = scales::breaks_extended(n = max(pizza_table$n))) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    legend.position = "top"
+  ) +
+  labs(x = NULL, y = "Count", title = "What Pizzas do you like?") +
+  coord_flip()
+```
